@@ -1,14 +1,15 @@
 #include "acceptorproxy.h"
 
-AcceptorProxyI::AcceptorProxyI(ServerId id, asio::io_context & context, const udp::endpoint & endpoint, const std::map<ServerId, udp::endpoint> & acceptors)
-    : id_(id)
-    , acceptors_(acceptors)
+AcceptorProxyI::AcceptorProxyI(ServerMap & acceptors, ServerMap & proposers, ServerId proposerId, asio::io_context & context)
+    : acceptorMap_(acceptors)
+    , proposerMap_(proposers)
+    , id_(proposerId)
     , context_(context)
+    , timer_(context)
 {
-    for(auto const &  i : acceptors)
-    {
-        acceptorIds_[i.second] = i.first;
-    }
+    udp::endpoint endpoint;
+    if(!proposerMap_.getEndpoint(proposerId, endpoint))
+        return;
 
     socket_ = std::make_shared<udp_socket>(context_, [this](const udp::endpoint & ep, uint8_t * data, size_t size)
     {
@@ -17,9 +18,12 @@ AcceptorProxyI::AcceptorProxyI(ServerId id, asio::io_context & context, const ud
     10240,
     1024);
     socket_->bind(endpoint);
+    socket_->start();
+
+    startTimer();
 }
 
-void AcceptorProxyI::addProposer(ServerId id, std::shared_ptr<Proposer> & proposer)
+void AcceptorProxyI::addProposer(ServerId id, ProposerPtr & proposer)
 {
     proposers_[id] = proposer;
 }
@@ -31,33 +35,32 @@ void AcceptorProxyI::delProposer(ServerId id)
 
 void AcceptorProxyI::prepare(const ServerId & acceptor, const PrepareRequest & request)
 {
-    auto iter = acceptors_.find(acceptor);
-    if(iter == acceptors_.end())
+    udp::endpoint endpoint;
+    if(!acceptorMap_.getEndpoint(acceptor, endpoint))
         return;
     std::string data = request.toString();
     data.insert(data.begin(), MSG_PREPARE_REQUEST);
-    socket_->send_to(iter->second, std::move(data));
+    socket_->send_to(endpoint, std::move(data));
 }
 
 void AcceptorProxyI::propose(const ServerId & acceptor, const ProposeRequest & request)
 {
-    auto iter = acceptors_.find(acceptor);
-    if(iter == acceptors_.end())
+    udp::endpoint endpoint;
+    if(!acceptorMap_.getEndpoint(acceptor, endpoint))
         return;
     std::string data = request.toString();
     data.insert(data.begin(), MSG_PROPOSE_REQUEST);
-    socket_->send_to(iter->second, std::move(data));
+    socket_->send_to(endpoint, std::move(data));
 }
 
-void AcceptorProxyI::onRecived(const udp::endpoint & ep, uint8_t * data, size_t size)
+void AcceptorProxyI::onRecived(const udp::endpoint & endpoint, uint8_t * data, size_t size)
 {
     if(size < 1)
         return;
+
     ServerId id;
-    auto iter = acceptorIds_.find(ep);
-    if(iter == acceptorIds_.end())
+    if(!acceptorMap_.getId(endpoint, id))
         return;
-    id = iter->second;
 
     auto iter2 = proposers_.find(id_);
     if(iter2 == proposers_.end())
@@ -85,5 +88,28 @@ void AcceptorProxyI::onRecived(const udp::endpoint & ep, uint8_t * data, size_t 
         break;
     default:
         break;
+    }
+}
+
+void AcceptorProxyI::startTimer()
+{
+    //10ms
+    timer_.expires_from_now(std::chrono::milliseconds(10));
+    timer_.async_wait([this](const error_code & ec)
+    {
+        onTimer(ec);
+    });
+}
+
+void AcceptorProxyI::onTimer(const error_code & ec)
+{
+    if(!ec)
+    {
+        for(auto & i : proposers_)
+        {
+            i.second->onTick();
+        }
+
+        startTimer();
     }
 }

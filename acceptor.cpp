@@ -1,8 +1,8 @@
 #include "acceptor.h"
 
-AcceptorI::AcceptorI(Database & db, ProposerProxy & proposer, ServerId & id)
+AcceptorI::AcceptorI(DatabasePtr db, ProposerProxyPtr proposerProxy, ServerId & id)
     : db_(db)
-    , proposer_(proposer)
+    , proposerProxy_(proposerProxy)
     , id_(id)
 {
 }
@@ -20,7 +20,7 @@ void AcceptorI::onPrepare(const ServerId & proposer, const PrepareRequest & requ
     }
 
     PrepareReply reply{data_.version_, isAccept, data_.proposal_ };
-    proposer_.replyPrepare(proposer, reply);
+    proposerProxy_->replyPrepare(proposer, reply);
 }
 
 void AcceptorI::onPropose(const ServerId & proposer, const ProposeRequest & request)
@@ -39,15 +39,15 @@ void AcceptorI::onPropose(const ServerId & proposer, const ProposeRequest & requ
     }
 
     ProposeReply reply{ version, isAccept };
-    proposer_.replyPropose(proposer, reply);
+    proposerProxy_->replyPropose(proposer, reply);
 }
 
 void AcceptorI::load()
 {
-    db_.load(id_, data_);
+    db_->load(id_, data_);
 }
 
 void AcceptorI::save()
 {
-    db_.save(id_, data_);
+    db_->save(id_, data_);
 }

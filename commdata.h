@@ -4,6 +4,8 @@
 #include <string>
 #include <optional>
 
+#include "noncopyable.h"
+
 typedef std::uint64_t Version;
 typedef std::string Value;
 typedef std::uint64_t ServerId;

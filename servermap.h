@@ -11,7 +11,7 @@ public:
     {
         for(auto const & i : servers)
         {
-            ids_[i->second] = i->first;
+            ids_[i.second] = i.first;
         }
     }
 
@@ -24,10 +24,10 @@ public:
         return true;
     }
 
-    inline bool getId(const Udp::endpoint & ep, ServerId & id)
+    inline bool getId(const udp::endpoint & endpint, ServerId & id)
     {
-        auto iter = ids.find(ep);
-        if(iter == ids.end())
+        auto iter = ids_.find(endpint);
+        if(iter == ids_.end())
             return false;
         id = iter->second;
         return true;

@@ -7,7 +7,6 @@
 
 #include "commdata.h"
 #include "interface.h"
-#include "noncopyable.h"
 
 class ProposerI : public Proposer, private noncopyable
 {
@@ -20,7 +19,7 @@ public:
         ACCEPTED,
     };
 
-    ProposerI(Database & db, AcceptorProxy & acceptor, ServerId id, const std::set<ServerId> & acceptorIds);
+    ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, ServerId id, const std::set<ServerId> & acceptorIds);
 
     void startPrepare();
 
@@ -28,7 +27,7 @@ public:
 
     void onProposeReply(const ServerId & acceptor, const ProposeReply & reply) override;
 
-    void tick();
+    void onTick() override;
 
     ProposerState state() const;
 
@@ -45,9 +44,9 @@ private:
 
     void changeState(ProposerState state);
 
-    Database & db_;
+    DatabasePtr db_;
 
-    AcceptorProxy & acceptor_;
+    AcceptorProxyPtr acceptor_;
 
     // this proposer id
     ServerId id_;

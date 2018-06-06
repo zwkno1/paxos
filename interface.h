@@ -1,7 +1,10 @@
 #pragma once
 
 #include <optional>
+#include <memory>
+
 #include "commdata.h"
+
 
 class Acceptor
 {
@@ -13,6 +16,9 @@ public:
     virtual ~Acceptor() {}
 };
 
+typedef std::shared_ptr<Acceptor> AcceptorPtr;
+
+
 class Proposer
 {
 public:
@@ -20,8 +26,13 @@ public:
 
     virtual void onProposeReply(const ServerId & acceptor, const ProposeReply & reply) = 0;
 
+    virtual void onTick() = 0;
+
     virtual ~Proposer() {}
 };
+
+typedef std::shared_ptr<Proposer> ProposerPtr;
+
 
 class AcceptorProxy
 {
@@ -33,6 +44,9 @@ public:
     virtual ~AcceptorProxy() {}
 };
 
+typedef std::shared_ptr<AcceptorProxy> AcceptorProxyPtr;
+
+
 class ProposerProxy
 {
 public:
@@ -42,6 +56,9 @@ public:
 
     virtual ~ProposerProxy() {}
 };
+
+typedef std::shared_ptr<ProposerProxy> ProposerProxyPtr;
+
 
 class Database
 {
@@ -61,3 +78,4 @@ public:
     virtual ~Database() {}
 };
 
+typedef std::shared_ptr<Database> DatabasePtr;

@@ -2,7 +2,7 @@
 
 #include <random>
 
-ProposerI::ProposerI(Database & db, AcceptorProxy & acceptor, ServerId id, const std::set<ServerId> & acceptorIds)
+ProposerI::ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, ServerId id, const std::set<ServerId> & acceptorIds)
     : db_(db)
     , acceptor_(acceptor)
     , id_(id)
@@ -56,7 +56,7 @@ void ProposerI::onPrepareReply(const ServerId & acceptor, const PrepareReply & r
             ProposeRequest request{ data_.version_, (proposal_ ? proposal_->value_ : defaultValue_) };
             for(auto const & id : acceptorIds_)
             {
-                acceptor_.propose(id, request);
+                acceptor_->propose(id, request);
             }
 
             changeState(PROPOSING);
@@ -134,13 +134,13 @@ void ProposerI::startPrepare()
     PrepareRequest request{ data_.version_ };
     for(auto id : acceptorIds_)
     {
-        acceptor_.prepare(id, request);
+        acceptor_->prepare(id, request);
     }
 
     changeState(PREPARING);
 }
 
-void ProposerI::tick()
+void ProposerI::onTick()
 {
     std::chrono::steady_clock::duration duration = std::chrono::steady_clock::now() - timestamp_;
 
@@ -187,12 +187,12 @@ const Version & ProposerI::version() const
 
 void ProposerI::load()
 {
-    db_.load(id_, data_);
+    db_->load(id_, data_);
 }
 
 void ProposerI::save()
 {
-    db_.save(id_, data_);
+    db_->save(id_, data_);
 }
 
 void ProposerI::changeState(ProposerState state)

@@ -3,14 +3,13 @@
 #include <optional>
 #include <tuple>
 
-#include "noncopyable.h"
 #include "commdata.h"
 #include "interface.h"
 
 class AcceptorI : public Acceptor, private noncopyable
 {
 public:
-    AcceptorI(Database & db, ProposerProxy & proposer, ServerId & id);
+    AcceptorI(DatabasePtr db, ProposerProxyPtr proposerProxy, ServerId & id);
 
     void onPrepare(const ServerId & proposer, const PrepareRequest & request) override;
 
@@ -22,10 +21,10 @@ private:
     void save();
 
     // db
-    Database & db_;
+    DatabasePtr db_;
 
     // proposer proxy
-    ProposerProxy & proposer_;
+    ProposerProxyPtr proposerProxy_;
 
     // server id
     ServerId id_;

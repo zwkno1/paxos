@@ -8,13 +8,14 @@
 #include "commdata.h"
 #include "interface.h"
 #include "udp_socket.h"
+#include "servermap.h"
 
-class ProposerProxyI : public ProposerProxy
+class ProposerProxyI : public ProposerProxy, private noncopyable
 {
 public:
-    ProposerProxyI(ServerId id, asio::io_context & context, const udp::endpoint & endpoint, const std::map<ServerId, udp::endpoint> & acceptors);
+    ProposerProxyI(ServerMap & acceptors, ServerMap & proposers, ServerId acceptorId, asio::io_context & context);
 
-    void addAcceptor(ServerId id, std::shared_ptr<Proposer> & proposer);
+    void addAcceptor(ServerId id, AcceptorPtr & proposer);
 
     void delAcceptor(ServerId id);
 
@@ -25,15 +26,16 @@ public:
 private:
     void onRecived(const udp::endpoint & ep, uint8_t * data, size_t size);
 
-    ServerId id_;
+    ServerMap & acceptorMap_;
 
-    std::map<ServerId, std::shared_ptr<Acceptor> > proposers_;
+    ServerMap & proposerMap_;
+
+    ServerId acceptorId_;
+
+    std::map<ServerId, AcceptorPtr> acceptors_;
 
     asio::io_context & context_;
 
     std::shared_ptr<udp_socket> socket_;
 
-    std::map<ServerId, udp::endpoint> proposers_;
-
-    std::map<udp::endpoint, ServerId> acceptorIds_;
 };
