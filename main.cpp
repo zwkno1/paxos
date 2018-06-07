@@ -17,9 +17,9 @@ int main(int argc, char *argv[])
 
     std::map<ServerId, udp::endpoint> proposersEndpoints =
     {
-        { 1, udp::endpoint{asio::ip::address::from_string("127.0.0.1"), 60001 } },
-        { 2, udp::endpoint{asio::ip::address::from_string("127.0.0.1"), 60002 } },
-        { 3, udp::endpoint{asio::ip::address::from_string("127.0.0.1"), 60003 } },
+        { 10001, udp::endpoint{asio::ip::address::from_string("127.0.0.1"), 60001 } },
+        { 10002, udp::endpoint{asio::ip::address::from_string("127.0.0.1"), 60002 } },
+        { 10003, udp::endpoint{asio::ip::address::from_string("127.0.0.1"), 60003 } },
     };
 
     std::set<ServerId> acceptorIds = {1,2,3};
@@ -29,28 +29,25 @@ int main(int argc, char *argv[])
 
     //server type acceptor/proposer
     std::string type = argv[1];
-    //server id
-    ServerId id = atoi(argv[2]);
     //db path
-    std::string dbPath = argv[3];
+    std::string dbPath = argv[2];
 
     DatabasePtr db = std::make_shared<LevelDB>(dbPath);
 
     try
     {
-
         if(type == "proposer")
         {
-            auto acceptorProxy = std::make_shared<AcceptorProxyI>(acceptors, proposers, id, context);
-            ProposerPtr proposer = std::make_shared<ProposerI>(db, acceptorProxy, id, acceptorIds);
-            acceptorProxy->addProposer(id, proposer);
+            auto acceptorProxy = std::make_shared<AcceptorProxyI>(acceptors, proposers, context);
+            ProposerPtr proposer = std::make_shared<ProposerI>(db, acceptorProxy, acceptorIds);
+            acceptorProxy->addProposer(proposer);
             context.run();
         }
         else if(type == "acceptor")
         {
-            auto proposerProxy = std::make_shared<ProposerProxyI>(acceptors, proposers, id, context);
-            AcceptorPtr acceptor = std::make_shared<AcceptorI>(db, proposerProxy, id);
-            proposerProxy->addAcceptor(id, acceptor);
+            auto proposerProxy = std::make_shared<ProposerProxyI>(acceptors, proposers, context);
+            AcceptorPtr acceptor = std::make_shared<AcceptorI>(db, proposerProxy);
+            proposerProxy->addAcceptor(acceptor);
             context.run();
         }
     }

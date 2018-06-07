@@ -24,11 +24,12 @@ Json::Value json_from_string(const std::string & str)
 std::string AcceptorData::toString() const
 {
     Json::Value root;
-    root["version"] = version_;
+    root["id"] = id_;
+    root["version"] = version_.value();
     Json::Value p;
     if(proposal_)
     {
-        p["version"] = proposal_->version_;
+        p["version"] = proposal_->version_.value();
         p["value"] = proposal_->value_;
     }
     root["proposal"] = p;
@@ -44,12 +45,19 @@ bool AcceptorData::fromString(const std::string & str)
     if(!root.isObject())
         return false;
 
+    if(!root.isMember("id"))
+        return false;
     if(!root.isMember("version"))
         return false;
     if(!root.isMember("proposal"))
         return false;
 
-    Json::Value v = root.get("version", Json::Value::null);
+    Json::Value v = root.get("id", Json::Value::null);
+    if(!v.isUInt())
+        return false;
+    id_ = v.asUInt();
+
+    v = root.get("version", Json::Value::null);
     if(!v.isUInt64())
         return false;
     version_ = v.asUInt64();
@@ -81,7 +89,8 @@ bool AcceptorData::fromString(const std::string & str)
 std::string ProposerData::toString() const
 {
     Json::Value root;
-    root["version"] = version_;
+    root["id"] = id_;
+    root["version"] = version_.value();
     if(value_)
         root["value"] = *value_;
     else
@@ -98,12 +107,19 @@ bool ProposerData::fromString(const std::string & str)
     if(!root.isObject())
         return false;
 
+    if(!root.isMember("id"))
+        return false;
     if(!root.isMember("version"))
         return false;
     if(!root.isMember("value"))
         return false;
 
-    Json::Value v = root.get("version", Json::Value::null);
+    Json::Value v = root.get("id", Json::Value::null);
+    if(!v.isUInt())
+        return false;
+    id_ = v.asUInt();
+
+    v = root.get("version", Json::Value::null);
     if(!v.isUInt64())
         return false;
     version_ = v.asUInt64();
@@ -124,7 +140,7 @@ bool ProposerData::fromString(const std::string & str)
 std::string PrepareRequest::toString() const
 {
     Json::Value root;
-    root["version"] = version_;
+    root["version"] = version_.value();
     return json_to_string(root);
 }
 
@@ -148,7 +164,7 @@ bool PrepareRequest::fromString(const std::string & str)
 std::string ProposeRequest::toString() const
 {
     Json::Value root;
-    root["version"] = version_;
+    root["version"] = version_.value();
     root["value"] = value_;
     return json_to_string(root);
 }
@@ -183,13 +199,13 @@ bool ProposeRequest::fromString(const std::string & str)
 std::string PrepareReply::toString() const
 {
     Json::Value root;
-    root["version"] = version_;
+    root["version"] = version_.value();
     root["isAccept"] = isAccept_;
 
     Json::Value v;
     if(proposal_)
     {
-        v["version"] = proposal_->version_;
+        v["version"] = proposal_->version_.value();
         v["value"] = proposal_->value_;
     }
     root["proposal"] = v;
@@ -255,7 +271,7 @@ bool PrepareReply::fromString(const std::string & str)
 std::string ProposeReply::toString() const
 {
     Json::Value root;
-    root["version"] = version_;
+    root["version"] = version_.value();
     root["isAccept"] = isAccept_;
 
     return json_to_string(root);

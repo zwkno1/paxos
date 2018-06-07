@@ -20,7 +20,7 @@ find_package(Threads)
 
 include_directories(./)
 
-add_library(paxos acceptor.cpp  commdata.cpp  leveldb.cpp  proposer.cpp acceptorproxy.cpp proposerproxy.cpp)
+add_library(paxos acceptor.cpp  commdata.cpp  leveldb.cpp  proposer.cpp acceptorproxy.cpp proposerproxy.cpp logger.cpp)
 
 target_link_libraries(paxos ${Boost_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT} 
@@ -29,4 +29,7 @@ target_link_libraries(paxos ${Boost_LIBRARIES}
 	)
 
 add_executable(server main.cpp)
+add_executable(initdb initdb.cpp)
+
 target_link_libraries(server paxos)
+target_link_libraries(initdb paxos)

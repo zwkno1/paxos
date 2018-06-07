@@ -53,7 +53,7 @@ class udp_socket : public std::enable_shared_from_this<udp_socket>
     };
 
 public:
-    typedef std::function<void(const udp::endpoint & ep,  uint8_t * data, std::size_t size)> recive_callback;
+    typedef std::function<void(std::shared_ptr<udp_socket> sock, const udp::endpoint & ep,  uint8_t * data, std::size_t size)> recive_callback;
     udp_socket(asio::io_context & context, recive_callback rc, std::size_t buffer_size, std::size_t max_queue_size)
         : socket_(context)
         , buffer_(buffer_size)
@@ -120,6 +120,12 @@ public:
         do_read();
     }
 
+    void stop()
+    {
+        error_code ec;
+        socket_.close(ec);
+    }
+
     void do_write()
     {
         auto self = shared_from_this();
@@ -150,7 +156,7 @@ public:
     {
         if(!ec)
         {
-            recive_callback_(peer_, buffer_.data(), bytes);
+            recive_callback_(shared_from_this(), peer_, buffer_.data(), bytes);
             do_read();
         }
     }

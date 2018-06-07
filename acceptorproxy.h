@@ -13,18 +13,18 @@
 class AcceptorProxyI : public AcceptorProxy, private noncopyable
 {
 public:
-    AcceptorProxyI(ServerMap & acceptors, ServerMap & proposers, ServerId proposerId, asio::io_context & context);
+    AcceptorProxyI(ServerMap & acceptors, ServerMap & proposers, asio::io_context & context);
 
-    void addProposer(ServerId id, ProposerPtr & proposer);
+    void addProposer(ProposerPtr & proposer);
 
     void delProposer(ServerId id);
 
-    void prepare(const ServerId & acceptor, const PrepareRequest & request) override;
+    void prepare(const ServerId & from, const ServerId & to, const PrepareRequest & request) override;
 
-    void propose(const ServerId & acceptor, const ProposeRequest & request) override;
+    void propose(const ServerId & from, const ServerId & to, const ProposeRequest & request) override;
 
 private:
-    void onRecived(const udp::endpoint & ep, uint8_t * data, size_t size);
+    void onRecived(const ServerId & proposerId, const udp::endpoint & endpoint, uint8_t * data, size_t size);
 
     void startTimer();
 
@@ -34,13 +34,11 @@ private:
 
     ServerMap & proposerMap_;
 
-    ServerId id_;
-
     std::map<ServerId, ProposerPtr> proposers_;
 
     asio::io_context & context_;
 
-    std::shared_ptr<udp_socket> socket_;
+    std::map<ServerId, std::shared_ptr<udp_socket> > sockets_;
 
     asio::steady_timer timer_;
 };

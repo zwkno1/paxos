@@ -11,16 +11,16 @@ public:
     LevelDB(const std::string & path);
 
     //load proposer
-    void load(const ServerId & id, ProposerData & data) override;
+    void load(ProposerData & data) override;
 
     //save proposer
-    void save(const ServerId & id, const ProposerData & data) override;
+    void save(const ProposerData & data) override;
 
     //load acceptor
-    void load(const ServerId & id, AcceptorData & data) override;
+    void load(AcceptorData & data) override;
 
     //save acceptor
-    void save(const ServerId & id, const AcceptorData & data) override;
+    void save(const AcceptorData & data) override;
 
 private:
     void checkStatus(const leveldb::Status & status);

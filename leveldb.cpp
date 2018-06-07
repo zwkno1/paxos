@@ -1,4 +1,5 @@
 #include "leveldb.h"
+#include "logger.h"
 
 LevelDB::LevelDB(const std::string & path)
 {
@@ -12,44 +13,48 @@ LevelDB::LevelDB(const std::string & path)
     db_.reset(db);
 }
 
-void LevelDB::load(const ServerId & id, ProposerData & data)
+void LevelDB::load(ProposerData & data)
 {
     // load proposor data
-    std::string key = std::string("P_") + std::to_string(id);
-    std::string val;
-    auto const status = db_->Get(leveldb::ReadOptions(), key, &val);
+    std::string key = "proposer";
+    std::string value;
+    auto const status = db_->Get(leveldb::ReadOptions(), key, &value);
     checkStatus(status);
-    checkData(data.fromString(val));
+    Logger::debug() << "load proposer: " << value;
+    checkData(data.fromString(value));
 }
 
-void LevelDB::save(const ServerId & id, const ProposerData & data)
+void LevelDB::save(const ProposerData & data)
 {
     // save proposor data
-    std::string key = std::string("P_") + std::to_string(id);
+    std::string key = "proposer";
     std::string value = data.toString();
     leveldb::Slice const keySlice(key.data(), key.size());
     leveldb::Slice const valueSlice(value.data(), value.size());
+    Logger::debug() << "save proposer: " << value;
     auto const status = db_->Put(leveldb::WriteOptions(), keySlice, valueSlice);
     checkStatus(status);
 }
 
-void LevelDB::load(const ServerId & id, AcceptorData & data)
+void LevelDB::load(AcceptorData & data)
 {
     // load acceptor data
-    std::string key = std::string("A_") + std::to_string(id);
-    std::string val;
-    auto const status = db_->Get(leveldb::ReadOptions(), key, &val);
+    std::string key = "acceptor";
+    std::string value;
+    auto const status = db_->Get(leveldb::ReadOptions(), key, &value);
     checkStatus(status);
-    checkData(data.fromString(val));
+    Logger::debug() << "load acceptor: " << value;
+    checkData(data.fromString(value));
 }
 
-void LevelDB::save(const ServerId & id, const AcceptorData & data)
+void LevelDB::save(const AcceptorData & data)
 {
     // save acceptor data
-    std::string key = std::string("A_") + std::to_string(id);
+    std::string key = "acceptor";
     std::string value = data.toString();
     leveldb::Slice const keySlice(key.data(), key.size());
     leveldb::Slice const valueSlice(value.data(), value.size());
+    Logger::debug() << "save acceptor: " << value;
     auto const status = db_->Put(leveldb::WriteOptions(), keySlice, valueSlice);
     checkStatus(status);
 }

@@ -2,10 +2,11 @@
 
 #include <random>
 
-ProposerI::ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, ServerId id, const std::set<ServerId> & acceptorIds)
+#include "logger.h"
+
+ProposerI::ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, const std::set<ServerId> & acceptorIds)
     : db_(db)
     , acceptor_(acceptor)
-    , id_(id)
     , acceptorIds_(acceptorIds)
     , quorum_(acceptorIds.size()/2+1)
 {
@@ -20,21 +21,34 @@ ProposerI::ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, ServerId id, con
 
 void ProposerI::onPrepareReply(const ServerId & acceptor, const PrepareReply & reply)
 {
+    Logger::debug() << "onPrepareReply, from acceptor: " << acceptor << reply.toString();
+
     const Version & version = reply.version_;
     const bool & isAccept = reply.isAccept_;
     const std::optional<Proposal> & proposal = reply.proposal_;
 
-    // version mismatch
-    if(version != data_.version_)
-        return;
-
     // state mismatch
     if(state_ != PREPARING)
+    {
+        Logger::debug() << "onPrepareReply, state: "<< getStateString(state_);
         return;
+    }
+
+    // version mismatch
+    if(version != data_.version_)
+    {
+        Logger::debug() << "onPrepareReply, proposer version: "<< data_.version_ << ", reply version : " << version;
+        return;
+    }
 
     // illega acceptor id or duplicate ballot
     if(votes_.erase(acceptor) != 1)
+    {
+        Logger::debug() << "onPrepareReply, acceptor id invalid: " << acceptor;
         return;
+    }
+
+    Logger::debug() << "onPrepareReply, before, accept num: " << acceptNum_ << ", reject num: " << rejectNum_;
 
     // a acceptor accept this prepare
     if(isAccept)
@@ -46,6 +60,7 @@ void ProposerI::onPrepareReply(const ServerId & acceptor, const PrepareReply & r
             if((!proposal_) || (proposal->version_ > proposal_->version_))
             {
                 proposal_ = proposal;
+                Logger::debug() << "onPrepareReply, update proposal, version:" << proposal_->version_ << ", value: " << proposal_->value_;
             }
         }
 
@@ -54,12 +69,13 @@ void ProposerI::onPrepareReply(const ServerId & acceptor, const PrepareReply & r
         {
             // start propose
             ProposeRequest request{ data_.version_, (proposal_ ? proposal_->value_ : defaultValue_) };
+            Logger::debug() << "onPrepareReply, quorum accept, start propose:" << request.toString();
             for(auto const & id : acceptorIds_)
             {
-                acceptor_->propose(id, request);
+                acceptor_->propose(data_.id_, id, request);
             }
-
             changeState(PROPOSING);
+            return;
         }
     }
     // a acceptor reject this prepare
@@ -69,9 +85,13 @@ void ProposerI::onPrepareReply(const ServerId & acceptor, const PrepareReply & r
         // quorum reject this prepare, prepare again
         if(rejectNum_ >= quorum_)
         {
+            Logger::debug() << "onPrepareReply, quorum reject";
             changeState(UNACCEPTED);
+            return;
         }
     }
+
+    Logger::debug() << "onPrepareReply, after, accept num: " << acceptNum_ << ", reject num: " << rejectNum_;
 }
 
 void ProposerI::onProposeReply(const ServerId & acceptor, const ProposeReply & reply)
@@ -79,18 +99,28 @@ void ProposerI::onProposeReply(const ServerId & acceptor, const ProposeReply & r
     const Version & version = reply.version_;
     const bool & isAccept = reply.isAccept_;
 
-    // version mismatch
-    if(version != data_.version_)
-        return;
-
     // state mismatch
     if(state_ != PREPARING)
+    {
+        Logger::debug() << "onProposeReply, state: "<< getStateString(state_);
         return;
+    }
+
+    // version mismatch
+    if(version != data_.version_)
+    {
+        Logger::debug() << "onProposeReply, proposer version: "<< data_.version_ << ", reply version : " << version;
+        return;
+    }
 
     // illega acceptor id or duplicate ballot
     if(votes_.erase(acceptor) != 1)
+    {
+        Logger::debug() << "onProposeReply, acceptor id invalid: " << acceptor;
         return;
+    }
 
+    Logger::debug() << "onProposeReply, before, accept num: " << acceptNum_ << ", reject num: " << rejectNum_;
     // a acceptor accept this propose
     if(isAccept)
     {
@@ -100,7 +130,9 @@ void ProposerI::onProposeReply(const ServerId & acceptor, const ProposeReply & r
         {
             changeState(ACCEPTED);
             data_.value_ = proposal_ ? proposal_->value_ : defaultValue_;
+            Logger::debug() << "onProposeReply, quorum accept proposal: " << data_.toString();
             save();
+            return;
         }
     }
     // a acceptor accept reject this propose
@@ -110,9 +142,25 @@ void ProposerI::onProposeReply(const ServerId & acceptor, const ProposeReply & r
         // quorum reject this propose
         if(rejectNum_ >= quorum_)
         {
+            Logger::debug() << "onProposeReply, quorum reject";
             changeState(UNACCEPTED);
+            return;
         }
     }
+    Logger::debug() << "onProposeReply, after, accept num: " << acceptNum_ << ", reject num: " << rejectNum_;
+}
+
+const std::string & ProposerI::getStateString(ProposerState state)
+{
+    static std::string stateStrings[] =
+    {
+        "UNACCEPTED",
+        "PREPARING",
+        "PROPOSING",
+        "ACCEPTED",
+    };
+
+    return stateStrings[state];
 }
 
 void ProposerI::resetBallot()
@@ -132,9 +180,10 @@ void ProposerI::startPrepare()
     save();
 
     PrepareRequest request{ data_.version_ };
+    Logger::debug() << "startPrepare, request: " << request.toString();
     for(auto id : acceptorIds_)
     {
-        acceptor_->prepare(id, request);
+        acceptor_->prepare(data_.id_, id, request);
     }
 
     changeState(PREPARING);
@@ -151,6 +200,7 @@ void ProposerI::onTick()
         std::chrono::milliseconds timeout(std::rand()%100+100);
         if(duration > timeout)
         {
+            Logger::debug() << "onTick, wait timeout, start prepare";
             startPrepare();
         }
     }
@@ -159,6 +209,7 @@ void ProposerI::onTick()
     {
         if(duration > prepareTimeout_)
         {
+            Logger::debug() << "onTick, prepare timeout, wait next turn";
             changeState(UNACCEPTED);
         }
     }
@@ -167,6 +218,7 @@ void ProposerI::onTick()
     {
         if(duration > proposeTimeout_)
         {
+            Logger::debug() << "onTick, prepare timeout, wait next turn";
             changeState(UNACCEPTED);
         }
     }
@@ -175,9 +227,9 @@ void ProposerI::onTick()
     }
 }
 
-ProposerI::ProposerState ProposerI::state() const
+const ServerId & ProposerI::id() const
 {
-    return state_;
+    return data_.id_;
 }
 
 const Version & ProposerI::version() const
@@ -185,14 +237,19 @@ const Version & ProposerI::version() const
     return data_.version_;
 }
 
+const std::optional<Value> & ProposerI::value() const
+{
+    return data_.value_;
+}
+
 void ProposerI::load()
 {
-    db_->load(id_, data_);
+    db_->load(data_);
 }
 
 void ProposerI::save()
 {
-    db_->save(id_, data_);
+    db_->save(data_);
 }
 
 void ProposerI::changeState(ProposerState state)

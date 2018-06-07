@@ -19,7 +19,7 @@ public:
         ACCEPTED,
     };
 
-    ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, ServerId id, const std::set<ServerId> & acceptorIds);
+    ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, const std::set<ServerId> & acceptorIds);
 
     void startPrepare();
 
@@ -29,13 +29,15 @@ public:
 
     void onTick() override;
 
-    ProposerState state() const;
+    const ServerId & id() const override;
 
-    const Version & version() const;
+    const Version & version() const override;
 
-    const Value & value() const;
+    const std::optional<Value> & value() const override;
 
 private:
+    const std::string & getStateString(ProposerState state);
+
     void resetBallot();
 
     void load();
@@ -47,9 +49,6 @@ private:
     DatabasePtr db_;
 
     AcceptorProxyPtr acceptor_;
-
-    // this proposer id
-    ServerId id_;
 
     ProposerState state_;
 
