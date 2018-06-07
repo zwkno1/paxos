@@ -1,2 +1,2 @@
 ### paxos
-todo: add log config file
+a simple paxos daemon

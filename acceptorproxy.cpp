@@ -10,7 +10,7 @@ AcceptorProxyI::AcceptorProxyI(ServerMap & acceptors, ServerMap & proposers, asi
     startTimer();
 }
 
-void AcceptorProxyI::addProposer(ProposerPtr & proposer)
+void AcceptorProxyI::addProposer(ProposerPtr proposer)
 {
     ServerId proposerId = proposer->id();
     proposers_[proposerId] = proposer;
@@ -64,7 +64,7 @@ void AcceptorProxyI::propose(const ServerId & from, const ServerId & to, const P
 
 void AcceptorProxyI::onRecived(const ServerId & proposerId, const udp::endpoint & endpoint, uint8_t * data, size_t size)
 {
-    Logger::debug() << "onRecive, proposer: " << proposerId << ", endpoint :" << endpoint.address().to_string() << ":" << endpoint.port() << ", type: " << (size > 0 ? (int)data[0] : 0) << ", size: " << size;
+    Logger::debug() << "onRecive, proposer: " << proposerId << ", endpoint :" << endpoint.address().to_string() << ":" << endpoint.port() << ", size: " << size;
     if(size < 1)
         return;
 
@@ -83,8 +83,10 @@ void AcceptorProxyI::onRecived(const ServerId & proposerId, const udp::endpoint 
     }
     auto & proposer = iter->second;
 
+    int type = data[0];
     std::string str((const char *)data+1, size-1);
-    switch (data[0])
+    Logger::debug() << "onRecive, message type: " << type << ", content:" << str;
+    switch (type)
     {
     case MSG_PREPARE_REPLY:
     {

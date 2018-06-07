@@ -82,5 +82,5 @@ void LevelDB::checkStatus(const leveldb::Status & status)
 void LevelDB::checkData(bool result)
 {
     if(!result)
-        throw "parse eroor";
+        throw "parse db data error";
 }

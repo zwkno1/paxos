@@ -21,6 +21,8 @@ public:
 
     ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, const std::set<ServerId> & acceptorIds);
 
+    void setProposalValue(const Value & value);
+
     void startPrepare();
 
     void onPrepareReply(const ServerId & acceptor, const PrepareReply & reply) override;
@@ -70,8 +72,8 @@ private:
     //the max proposal acceptor reply for prepare
     std::optional<Proposal> proposal_;
 
-    // default value, if proposal_ is null propose this value
-    Value defaultValue_;
+    // propose this value if all acceptor return null proposal
+    Value proposalValue_;
 
     std::chrono::steady_clock::time_point timestamp_;
 

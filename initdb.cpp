@@ -4,6 +4,12 @@
 
 int main(int argc, char *argv[])
 {
+    if(argc < 4)
+    {
+        std::cout << argv[0] << " dbPath acceptor/proposer serverId sequence" << std::endl;
+        return -1;
+    }
+
     std::string dbPath = argv[1];
     std::string role = argv[2];
     ServerId serverId = atoi(argv[3]);

@@ -35,12 +35,11 @@ void AcceptorI::onPropose(const ServerId & proposer, const ProposeRequest & requ
     const Value & value = request.value_;
 
     bool isAccept = false;
-    if(version > data_.version_)
+    if(version >= data_.version_)
     {
         Logger::debug() << "onPropose, accept ";
         isAccept = true;
-        data_.proposal_->version_ = version;
-        data_.proposal_->value_ = value;
+        data_.proposal_ = Proposal{ version, value };
         data_.version_ = version;
         save();
     }

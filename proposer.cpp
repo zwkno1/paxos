@@ -16,7 +16,7 @@ ProposerI::ProposerI(DatabasePtr db, AcceptorProxyPtr acceptor, const std::set<S
 
     prepareTimeout_ = std::chrono::microseconds(100);
     proposeTimeout_ = std::chrono::microseconds(100);
-    defaultValue_ = "";
+    proposalValue_ = "";
 }
 
 void ProposerI::onPrepareReply(const ServerId & acceptor, const PrepareReply & reply)
@@ -68,7 +68,7 @@ void ProposerI::onPrepareReply(const ServerId & acceptor, const PrepareReply & r
         if(acceptNum_ >= quorum_)
         {
             // start propose
-            ProposeRequest request{ data_.version_, (proposal_ ? proposal_->value_ : defaultValue_) };
+            ProposeRequest request{ data_.version_, (proposal_ ? proposal_->value_ : proposalValue_) };
             Logger::debug() << "onPrepareReply, quorum accept, start propose:" << request.toString();
             for(auto const & id : acceptorIds_)
             {
@@ -100,7 +100,7 @@ void ProposerI::onProposeReply(const ServerId & acceptor, const ProposeReply & r
     const bool & isAccept = reply.isAccept_;
 
     // state mismatch
-    if(state_ != PREPARING)
+    if(state_ != PROPOSING)
     {
         Logger::debug() << "onProposeReply, state: "<< getStateString(state_);
         return;
@@ -129,7 +129,7 @@ void ProposerI::onProposeReply(const ServerId & acceptor, const ProposeReply & r
         if(acceptNum_ >= quorum_)
         {
             changeState(ACCEPTED);
-            data_.value_ = proposal_ ? proposal_->value_ : defaultValue_;
+            data_.value_ = (proposal_ ? proposal_->value_ : proposalValue_);
             Logger::debug() << "onProposeReply, quorum accept proposal: " << data_.toString();
             save();
             return;
@@ -168,7 +168,11 @@ void ProposerI::resetBallot()
     votes_ = acceptorIds_;
     acceptNum_ = 0;
     rejectNum_ = 0;
-    proposal_.reset();
+}
+
+void ProposerI::setProposalValue(const Value & value)
+{
+    proposalValue_ = value;
 }
 
 void ProposerI::startPrepare()
@@ -256,7 +260,12 @@ void ProposerI::changeState(ProposerState state)
 {
     state_ = state;
     timestamp_ = std::chrono::steady_clock::now();
-    if(state_ = UNACCEPTED)
+    if(state_ == PREPARING)
+    {
+        proposal_.reset();
+        resetBallot();
+    }
+    else if(state_ == PROPOSING)
     {
         resetBallot();
     }

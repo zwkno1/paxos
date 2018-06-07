@@ -1,4 +1,5 @@
 #include "commdata.h"
+#include <memory>
 #include <json/json.h>
 
 namespace
@@ -14,8 +15,9 @@ std::string json_to_string(const Json::Value & value)
 Json::Value json_from_string(const std::string & str)
 {
     Json::Value value;
-    Json::Reader reader;
-    if(!reader.parse(str, value))
+    Json::CharReaderBuilder builder;
+    std::unique_ptr<Json::CharReader> const reader(builder.newCharReader());
+    if(!reader->parse(str.data(), str.data() + str.size(), &value, 0))
         return Json::Value::null;
     return value;
 }
@@ -72,7 +74,7 @@ bool AcceptorData::fromString(const std::string & str)
             return false;
         p.version_ = v2.asUInt64();
 
-        v2 = v.get("Value", Json::Value::null);
+        v2 = v.get("value", Json::Value::null);
         if(!v2.isString())
             return false;
         p.value_ = v2.asString();
@@ -299,7 +301,7 @@ bool ProposeReply::fromString(const std::string & str)
     v = root.get("isAccept", Json::Value::null);
     if(!v.isBool())
         return false;
-    version_ = v.asBool();
+    isAccept_ = v.asBool();
 
     return true;
 }

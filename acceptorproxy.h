@@ -15,7 +15,7 @@ class AcceptorProxyI : public AcceptorProxy, private noncopyable
 public:
     AcceptorProxyI(ServerMap & acceptors, ServerMap & proposers, asio::io_context & context);
 
-    void addProposer(ProposerPtr & proposer);
+    void addProposer(ProposerPtr proposer);
 
     void delProposer(ServerId id);
 

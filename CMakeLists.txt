@@ -33,3 +33,6 @@ add_executable(initdb initdb.cpp)
 
 target_link_libraries(server paxos)
 target_link_libraries(initdb paxos)
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/initdb.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+

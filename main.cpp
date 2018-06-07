@@ -5,7 +5,12 @@
 
 int main(int argc, char *argv[])
 {
-    // a/p id db
+    if(argc < 3)
+    {
+        std::cout << argv[0] << " acceptor/proposer dbPath (proposalValue)" << std::endl;
+        return -1;
+    }
+
     asio::io_context context;
 
     std::map<ServerId, udp::endpoint> acceptorsEndpoints =
@@ -39,7 +44,10 @@ int main(int argc, char *argv[])
         if(type == "proposer")
         {
             auto acceptorProxy = std::make_shared<AcceptorProxyI>(acceptors, proposers, context);
-            ProposerPtr proposer = std::make_shared<ProposerI>(db, acceptorProxy, acceptorIds);
+            auto proposer = std::make_shared<ProposerI>(db, acceptorProxy, acceptorIds);
+            if(argc > 3)
+                proposer->setProposalValue(argv[3]);
+
             acceptorProxy->addProposer(proposer);
             context.run();
         }

@@ -8,7 +8,7 @@ ProposerProxyI::ProposerProxyI(ServerMap & acceptors, ServerMap & proposers, asi
 {
 }
 
-void ProposerProxyI::addAcceptor(AcceptorPtr & acceptor)
+void ProposerProxyI::addAcceptor(AcceptorPtr acceptor)
 {
     ServerId acceptorId = acceptor->id();
     acceptors_[acceptorId] = acceptor;
@@ -100,8 +100,10 @@ void ProposerProxyI::onRecived(ServerId acceptorId, const udp::endpoint & endpoi
     }
     auto & acceptor = iter2->second;
 
+    int type = data[0];
     std::string str((const char *)data+1, size-1);
-    switch (data[0])
+    Logger::debug() << "onRecive, message type: " << type << ", content:" << str;
+    switch (type)
     {
     case MSG_PREPARE_REQUEST:
     {
