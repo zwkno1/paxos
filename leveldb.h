@@ -28,6 +28,8 @@ private:
 
     std::unique_ptr<leveldb::DB> db_;
 
+    leveldb::WriteOptions writeOptions_;
+
     std::string path_;
 };
 

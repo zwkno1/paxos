@@ -11,6 +11,8 @@ LevelDB::LevelDB(const std::string & path)
     auto const status = leveldb::DB::Open(options, path, &db);
     checkStatus(status);
     db_.reset(db);
+
+    writeOptions_.sync = true;
 }
 
 void LevelDB::load(ProposerData & data)
@@ -32,7 +34,7 @@ void LevelDB::save(const ProposerData & data)
     leveldb::Slice const keySlice(key.data(), key.size());
     leveldb::Slice const valueSlice(value.data(), value.size());
     Logger::debug() << "save proposer: " << value;
-    auto const status = db_->Put(leveldb::WriteOptions(), keySlice, valueSlice);
+    auto const status = db_->Put(writeOptions_, keySlice, valueSlice);
     checkStatus(status);
 }
 
@@ -55,7 +57,7 @@ void LevelDB::save(const AcceptorData & data)
     leveldb::Slice const keySlice(key.data(), key.size());
     leveldb::Slice const valueSlice(value.data(), value.size());
     Logger::debug() << "save acceptor: " << value;
-    auto const status = db_->Put(leveldb::WriteOptions(), keySlice, valueSlice);
+    auto const status = db_->Put(writeOptions_, keySlice, valueSlice);
     checkStatus(status);
 }
 
