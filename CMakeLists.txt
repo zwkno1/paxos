@@ -20,7 +20,7 @@ find_package(Threads)
 
 include_directories(./)
 
-add_library(paxos acceptor.cpp  commdata.cpp  leveldb.cpp  proposer.cpp acceptorproxy.cpp proposerproxy.cpp logger.cpp)
+add_library(paxos acceptor.cpp  commdata.cpp  leveldb.cpp  proposer.cpp acceptorproxy.cpp proposerproxy.cpp logger.cpp exception.cpp factory.cpp)
 
 target_link_libraries(paxos ${Boost_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT} 

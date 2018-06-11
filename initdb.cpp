@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
         sequence = atoi(argv[4]);
     try
     {
-        DatabasePtr db = std::make_shared<LevelDB>(dbPath);
+        DatabasePtr db = makeDatabase(dbPath);
         if(role == "acceptor")
         {
             AcceptorData data;
@@ -36,9 +36,9 @@ int main(int argc, char *argv[])
             db->save(data);
         }
     }
-    catch(const char * err)
+    catch(const Exception & e)
     {
-        std::cout << err << std::endl;
+        std::cout << e.where() << ":" << e.what() << std::endl;
     }
     return 0;
 }

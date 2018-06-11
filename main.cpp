@@ -37,10 +37,9 @@ int main(int argc, char *argv[])
     //db path
     std::string dbPath = argv[2];
 
-    DatabasePtr db = std::make_shared<LevelDB>(dbPath);
-
     try
     {
+        DatabasePtr db = makeDatabase(dbPath);
         if(type == "proposer")
         {
             auto acceptorProxy = std::make_shared<AcceptorProxyI>(acceptors, proposers, context);
@@ -59,9 +58,9 @@ int main(int argc, char *argv[])
             context.run();
         }
     }
-    catch(const char * err)
+    catch(const Exception & e)
     {
-        std::cout << err << std::endl;
+        std::cout << e.where() << ":" << e.what() << std::endl;
     }
 
     return 0;

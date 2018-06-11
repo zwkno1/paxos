@@ -4,5 +4,6 @@
 #include "proposer.h"
 #include "acceptorproxy.h"
 #include "proposerproxy.h"
-#include "leveldb.h"
+#include "exception.h"
+#include "factory.h"
 

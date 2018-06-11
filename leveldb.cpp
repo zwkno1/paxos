@@ -1,5 +1,6 @@
 #include "leveldb.h"
 #include "logger.h"
+#include "exception.h"
 
 LevelDB::LevelDB(const std::string & path)
 {
@@ -78,11 +79,13 @@ void LevelDB::checkStatus(const leveldb::Status & status)
    else
        statusStr = "Unknown";
 
-   throw statusStr;
+   throwException("database", statusStr);
 }
 
 void LevelDB::checkData(bool result)
 {
     if(!result)
-        throw "parse db data error";
+    {
+        throwException("database", "ParseDataError");
+    }
 }
